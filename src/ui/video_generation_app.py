@@ -10,7 +10,7 @@ from src.scraping.tiktok import get_tiktok_hashtag_trends, get_tiktok_song_trend
 from src.config import load_config
 from src.llm.agent import agent_call
 
-from src.llm.prompt_template import video_creating_prompt, create_hashtags, create_caption
+from src.llm.prompt_template import video_creating_prompt, create_hashtags, create_caption, prediction_forecast
 
 from src.llm.generator_llm import setup_watsonx_llm_video, setup_watsonx_llm
 
@@ -578,6 +578,7 @@ def generate_video() -> bool:
     final_caption = llm_caption_hashtags.invoke(prompt_caption)
     logger.info("Created caption: %s", final_caption)
 
+
     ###### Recommended Hashtags ######
     i += 1
     progress = (i+1) / len(steps)
@@ -594,6 +595,16 @@ def generate_video() -> bool:
 
     final_hashtags = llm_caption_hashtags.invoke(prompt_hashtags)
     logger.info("Generated hashtags: %s",final_hashtags)
+
+    prompt_evaluate_impact = prediction_forecast()
+
+    prompt_impact = prompt_evaluate_impact.format(
+        brand_name=st.session_state.brand_name,
+        product=st.session_state.brand_product,
+        caption=final_caption,
+        hashtags=final_hashtags)
+
+    final_evaluation = llm_caption_hashtags.invoke(prompt_impact)
     
 
 

@@ -12,6 +12,8 @@ def video_creating_prompt():
     Important:
     use the brandname in the output and mention the product
     Based on the trend description make detailed prompt so it can be used by pika api to create a video
+    Do not include an Introduction sentence like: Here is a two-sentence text-to-video prompt that showcases the Starbucks brand and container product in a tone style inspired by Italian Brainrot
+    Only Output the prompt nothing else
     <|eot_id|><|start_header_id|>user<|end_header_id|>
 
     {brand_name}
@@ -80,4 +82,39 @@ def create_caption():
     )
     return prompt_template_caption
 
+
+def prediction_forecast():
+    prompt_template_caption = PromptTemplate(
+        input_variables=["brand_name", "product","caption", "hashtags"],
+        template="""
+    <|begin_of_text|><|start_header_id|>system<|end_header_id|>
+    You are an Evaluation Assistant.
+
+    You are provided with the following:
+    - Brand: brand_name
+    - Product: product
+    - Caption: caption
+    - Hashtags: hashtags
+    
+    Your task is to evaluate how impactful this social media post is likely to be.
+    
+    Assess how well the caption and hashtags align with current trends and brand identity.
+    Respond with a brief, 2–3 sentence explanation of the post’s engagement potential.
+    
+    Do not begin with a quotation mark.
+    Do not include phrases like "Here is..." or "This is a...".
+
+
+    <|eot_id|><|start_header_id|>user<|end_header_id|>
+
+    {brand_name}
+    {product}
+    {hashtags}
+    {caption}
+
+
+    <|eot_id|><|start_header_id|>assistant<|end_header_id|>  
+    """
+    )
+    return prompt_template_caption
 
