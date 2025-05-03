@@ -1,18 +1,17 @@
-import io
-import json
-import logging
+"""Module for the UI of the Video Generator tool."""
 import time
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List
 
-import pandas as pd
-import requests
 import streamlit as st
-from PIL import Image
 from src.logging import get_logger
+from src.scraping.linkedin import get_linkedin_trending_hashtags
+from src.scraping.instagram import get_instagram_trending_hashtags
+from src.scraping.tiktok import get_tiktok_hashtag_trends, get_tiktok_song_trends
+from src.config import load_config
 
 
 logger = get_logger(__name__)
-
+config = load_config("configs/scraping.yaml")
 # Constants
 PLATFORMS = ["TikTok", "LinkedIn", "Instagram"]
 TONE_OPTIONS = ["Very Serious", "Professional", "Neutral", "Fun", "Humorous"]
@@ -52,6 +51,22 @@ def configure_page_settings():
     .trend-card:hover {
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
+    .song-card {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background-color: #f9f9f9;
+    transition: all 0.3s;
+    }
+    .song-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        background-color: #f0f0f0;
+    }
+    .song-selected {
+        border: 2px solid #4CAF50;
+        background-color: #f0fff0;
+    }
     </style>
     """,
         unsafe_allow_html=True,
@@ -72,91 +87,80 @@ def fetch_trending_content(platform: str) -> List[Dict]:
 
     # In a real implementation, this would call your trend detection API
     # Mock data for demonstration
-    mock_trends = {
+    trends = {
         "TikTok": [
             {
-                "id": "tt1",
-                "title": "Dance Challenge",
-                "description": "#DanceChallenge trending with over 2M videos this week",
-                "engagement": "2.3M videos",
-                "image_url": "https://placehold.co/300x500/FF5151/FFF?text=Dance+Challenge",
-                "audio": "Oh No - Kreepa",
-            },
-            {
-                "id": "tt2",
-                "title": "Productivity Hack",
-                "description": "Quick productivity tips in 15-second format",
-                "engagement": "1.7M videos",
-                "image_url": "https://placehold.co/300x500/51A3FF/FFF?text=Productivity+Hack",
-                "audio": "Monkeys Spinning Monkeys - Kevin MacLeod",
-            },
-            {
-                "id": "tt3",
-                "title": "Day in the Life",
-                "description": "Creators showing their daily routine with fast cuts",
-                "engagement": "4.2M videos",
-                "image_url": "https://placehold.co/300x500/51FF8D/000?text=Day+in+Life",
-                "audio": "Steven Universe - L.Dre",
-            },
+                "id": f"li{i+1}",
+                "title": f"#{post["hashtag"]}",
+                "description": "Professionals sharing career development matrices",
+                "engagement": f"{post['post_count']} follower",
+                "image_url": f"https://placehold.co/600x400/0077B5/FFF?text={post['hashtag']}",
+                "audio": f"{post["hashtag"]}",
+            }
+            for i, post in enumerate(
+                get_tiktok_hashtag_trends(config["tiktok"]["hashtags"], limit=6)
+            )
         ],
         "LinkedIn": [
             {
-                "id": "li1",
-                "title": "Career Growth Framework",
+                "id": f"li{i+1}",
+                "title": f"#{post["hashtag"]}",
                 "description": "Professionals sharing career development matrices",
-                "engagement": "12K shares",
-                "image_url": "https://placehold.co/600x400/0077B5/FFF?text=Career+Growth",
-                "hashtags": "#CareerAdvice #ProfessionalDevelopment",
-            },
-            {
-                "id": "li2",
-                "title": "AI Implementation Stories",
-                "description": "Case studies of AI deployment in enterprises",
-                "engagement": "8.5K shares",
-                "image_url": "https://placehold.co/600x400/0077B5/FFF?text=AI+Stories",
-                "hashtags": "#ArtificialIntelligence #TechTrends",
-            },
-            {
-                "id": "li3",
-                "title": "Work-Life Balance Confessions",
-                "description": "Authentic stories about balancing career and personal life",
-                "engagement": "15K shares",
-                "image_url": "https://placehold.co/600x400/0077B5/FFF?text=Work-Life",
-                "hashtags": "#WorkLifeBalance #WellnessAtWork",
-            },
+                "engagement": f"{post['followers']} follower",
+                "image_url": f"https://placehold.co/600x400/0077B5/FFF?text={post['hashtag']}",
+                "hashtags": f"{post["hashtag"]}",
+            }
+            for i, post in enumerate(
+                get_linkedin_trending_hashtags(config["linkedin"]["hashtags"], limit=6)
+            )
         ],
+        # [
+        #     {
+        #         "id": "li1",
+        #         "title": "Career Growth Framework",
+        #         "description": "Professionals sharing career development matrices",
+        #         "engagement": "12K shares",
+        #         "image_url": "https://placehold.co/600x400/0077B5/FFF?text=Career+Growth",
+        #         "hashtags": "#CareerAdvice #ProfessionalDevelopment",
+        #     },
+        #     {
+        #         "id": "li2",
+        #         "title": "AI Implementation Stories",
+        #         "description": "Case studies of AI deployment in enterprises",
+        #         "engagement": "8.5K shares",
+        #         "image_url": "https://placehold.co/600x400/0077B5/FFF?text=AI+Stories",
+        #         "hashtags": "#ArtificialIntelligence #TechTrends",
+        #     },
+        #     {
+        #         "id": "li3",
+        #         "title": "Work-Life Balance Confessions",
+        #         "description": "Authentic stories about balancing career and personal life",
+        #         "engagement": "15K shares",
+        #         "image_url": "https://placehold.co/600x400/0077B5/FFF?text=Work-Life",
+        #         "hashtags": "#WorkLifeBalance #WellnessAtWork",
+        #     },
+        # ],
         "Instagram": [
             {
-                "id": "ig1",
-                "title": "Transition Reels",
-                "description": "Quick outfit/location changes with smooth transitions",
-                "engagement": "5.7M posts",
-                "image_url": "https://placehold.co/500x500/E1306C/FFF?text=Transitions",
+                "id": f"li{i+1}",
+                "title": f"#{post["hashtag"]}",
+                "description": "Professionals sharing career development matrices",
+                "engagement": f"{post['posts']} posts",
+                "image_url": f"https://placehold.co/600x400/0077B5/FFF?text={post['hashtag']}",
                 "effect": "Glitch Effect",
-            },
-            {
-                "id": "ig2",
-                "title": "Product Unboxing",
-                "description": "Aesthetic unboxing videos with ASMR elements",
-                "engagement": "3.2M posts",
-                "image_url": "https://placehold.co/500x500/E1306C/FFF?text=Unboxing",
-                "effect": "Soft Zoom",
-            },
-            {
-                "id": "ig3",
-                "title": "Behind The Scenes",
-                "description": "Showing the process behind products or services",
-                "engagement": "2.8M posts",
-                "image_url": "https://placehold.co/500x500/E1306C/FFF?text=BTS",
-                "effect": "VHS Filter",
-            },
+            }
+            for i, post in enumerate(
+                get_instagram_trending_hashtags(
+                    config["instagram"]["hashtags"], limit=6
+                )
+            )
         ],
     }
 
     # Simulate API call delay
     time.sleep(1)
 
-    return mock_trends.get(platform, [])
+    return trends.get(platform, [])
 
 
 def display_trend_card(trend: Dict, index: int, platform: str) -> None:
@@ -169,7 +173,7 @@ def display_trend_card(trend: Dict, index: int, platform: str) -> None:
         platform: The platform this trend is from
     """
     with st.container():
-        st.markdown(f"<div class='trend-card'>", unsafe_allow_html=True)
+        # st.markdown(f"<div class='trend-card'>", unsafe_allow_html=True)
 
         # Title and engagement
         st.subheader(f"🔥 {trend['title']}")
@@ -193,7 +197,18 @@ def display_trend_card(trend: Dict, index: int, platform: str) -> None:
         if st.button("Select This Trend", key=f"trend_{platform}_{index}"):
             st.session_state.selected_trend = trend
             st.session_state.selected_platform = platform
-            logger.info(f"Selected trend: {trend['title']} from {platform}")
+
+            # If TikTok is selected, set page to song_selection
+            if platform == "TikTok":
+                st.session_state.page = "song_selection"
+                # Clear any previously selected song
+                if hasattr(st.session_state, "selected_song"):
+                    del st.session_state.selected_song
+            else:
+                st.session_state.page = "generation"
+
+            logger.info("Selected trend: %s from %s", trend['title'], platform)
+            st.rerun()  # Important: rerun to update the page immediately
 
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -231,6 +246,190 @@ def display_trends_for_platform(platform: str) -> None:
                 display_trend_card(trend, i, platform)
 
 
+def fetch_trending_songs() -> List[Dict]:
+    """
+    Fetch trending songs from TikTok.
+
+    Returns:
+        A list of trending songs with metadata
+    """
+    logger.info("Fetching trending songs from TikTok")
+
+    try:
+        # Get trending songs using the extract_tiktok_songs function
+        songs = get_tiktok_song_trends(config["tiktok"]["songs"], limit=6)
+        if not songs:
+            raise ValueError("Couldn't properly fetch songs.")
+
+        # Format the songs for display
+        formatted_songs = []
+        for i, song in enumerate(songs):
+            formatted_songs.append(
+                {
+                    "id": f"song{i+1}",
+                    "title": song.get("title", "Unknown Song"),
+                    "artist": song.get("artist", "Unknown Artist"),
+                    "duration": song.get("duration", "0:30"),
+                    "image_url": "https://placehold.co/400x400/FF5151/FFF?text"\
+                        f"={song.get('title', 'Song').replace(' ', '+')}",
+                    "preview_url": "https://sample-videos.com/audio/mp3/crowd-cheering.mp3",
+                    "popularity": song.get("popularity", "Trending"),
+                    "uses": song.get("uses", "1M+ videos"),
+                }
+            )
+
+        return formatted_songs
+    except Exception as e:  # Sorry, bad code, but works
+        logger.error("Error fetching trending songs: %s", str(e))
+
+        # Fallback mock data
+        return [
+            {
+                "id": "song1",
+                "title": "Cruel Summer",
+                "artist": "Taylor Swift",
+                "duration": "0:30",
+                "image_url": "https://placehold.co/400x400/FF5151/FFF?text=Cruel+Summer",
+                "preview_url": "https://sample-videos.com/audio/mp3/crowd-cheering.mp3",
+                "popularity": "Trending",
+                "uses": "2.3M+ videos",
+            },
+            {
+                "id": "song2",
+                "title": "Paint The Town Red",
+                "artist": "Doja Cat",
+                "duration": "0:30",
+                "image_url": "https://placehold.co/400x400/FF5151/FFF?text=Paint+The+Town+Red",
+                "preview_url": "https://sample-videos.com/audio/mp3/crowd-cheering.mp3",
+                "popularity": "Trending",
+                "uses": "1.8M+ videos",
+            },
+            {
+                "id": "song3",
+                "title": "Lose Control",
+                "artist": "Teddy Swims",
+                "duration": "0:30",
+                "image_url": "https://placehold.co/400x400/FF5151/FFF?text=Lose+Control",
+                "preview_url": "https://sample-videos.com/audio/mp3/crowd-cheering.mp3",
+                "popularity": "Trending",
+                "uses": "1.5M+ videos",
+            },
+        ]
+
+
+def display_song_card(song: Dict, index: int) -> None:
+    """
+    Display a single song card with selection button.
+
+    Args:
+        song: Dictionary containing song information
+        index: Unique index for the song
+    """
+    # Check if this song is selected
+    is_selected = (
+        hasattr(st.session_state, "selected_song")
+        and st.session_state.selected_song.get("id") == song["id"]
+    )
+
+    # Create a card with conditional styling based on selection
+    card_class = "song-card song-selected" if is_selected else "song-card"
+
+    with st.container():
+        st.markdown(f"<div class='{card_class}'>", unsafe_allow_html=True)
+
+        # Create two columns for layout
+        col1, col2 = st.columns([1, 3])
+
+        with col1:
+            # Song image
+            st.image(song["image_url"], use_container_width=True)
+
+        with col2:
+            # Song details
+            st.subheader(f"🎵 {song['title']}")
+            st.caption(f"Artist: {song['artist']}")
+            st.text(f"Duration: {song['duration']} | Uses: {song['uses']}")
+
+            # Audio preview
+            st.audio(song["preview_url"])
+
+        # Select button
+        button_label = "Selected ✓" if is_selected else "Select This Song"
+        button_type = "secondary" if is_selected else "primary"
+
+        if st.button(
+            button_label, key=f"song_{index}", type=button_type, disabled=is_selected
+        ):
+            st.session_state.selected_song = song
+            logger.info("Selected song: %s by %s", song['title'], song['artist'])
+            st.rerun()  # Refresh to update the UI
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
+def display_song_selection_page():
+    """Display the song selection page after TikTok trend selection."""
+    st.markdown("## Select a Song for Your TikTok Video")
+
+    # Show selected trend information
+    if hasattr(st.session_state, "selected_trend"):
+        trend = st.session_state.selected_trend
+        st.info(f"Creating video based on trend: **{trend['title']}**")
+
+        # Fetch trending songs if not already in session state
+        if "trending_songs" not in st.session_state:
+            with st.spinner("Fetching trending songs..."):
+                st.session_state.trending_songs = fetch_trending_songs()
+
+        # Display songs
+        if st.session_state.trending_songs:
+            st.subheader(
+                "Choose a song that matches your brand and the selected trend:"
+            )
+
+            # Display song cards
+            for i, song in enumerate(st.session_state.trending_songs):
+                display_song_card(song, i)
+
+            # Navigation
+            st.markdown("---")
+            col1, col2 = st.columns([1, 3])
+
+            with col1:
+                if st.button("← Back to Trends", key="back_to_trends_from_songs"):
+                    # Clear selected trend to go back to trend selection
+                    if hasattr(st.session_state, "selected_trend"):
+                        del st.session_state.selected_trend
+                    st.session_state.page = "trends"
+                    st.rerun()
+
+            with col2:
+                # Only enable continue button if a song is selected
+                continue_disabled = not hasattr(st.session_state, "selected_song")
+                if st.button(
+                    "Continue to Video Generation",
+                    type="primary",
+                    disabled=continue_disabled,
+                    key="continue_to_generation_from_songs",
+                ):
+                    st.session_state.page = "generation"
+                    st.rerun()
+
+                if continue_disabled:
+                    st.caption("Please select a song to continue")
+        else:
+            st.error("Unable to load trending songs. Please try again.")
+            if st.button("Back to Trends"):
+                st.session_state.page = "trends"
+                st.rerun()
+    else:
+        # If no trend is selected, go back to trends page
+        st.error("No trend selected. Please select a trend first.")
+        if st.button("Back to Trends"):
+            st.session_state.page = "trends"
+            st.rerun()
+
+
 def collect_brand_information() -> None:
     """Collect and store brand information in the sidebar."""
     with st.sidebar:
@@ -241,25 +440,15 @@ def collect_brand_information() -> None:
             "Brand Name", value=st.session_state.get("brand_name", "")
         )
 
-        st.session_state.brand_slogan = st.text_area(
-            "Slogan or Tagline",
-            value=st.session_state.get("brand_slogan", ""),
+        st.session_state.brand_product = st.text_area(
+            "Product Description",
+            value=st.session_state.get("brand_product", ""),
             max_chars=100,
         )
 
         # Brand logo
         st.session_state.brand_logo = st.file_uploader(
             "Upload Brand Logo", type=["png", "jpg", "jpeg"]
-        )
-
-        # Brand colors
-        st.session_state.brand_color = st.color_picker(
-            "Brand Primary Color", value=st.session_state.get("brand_color", "#FF4B4B")
-        )
-
-        st.session_state.brand_secondary_color = st.color_picker(
-            "Brand Secondary Color",
-            value=st.session_state.get("brand_secondary_color", "#4B4BFF"),
         )
 
         st.markdown("---")
@@ -305,12 +494,12 @@ def generate_video() -> bool:
 
     # In a real implementation, this would call your video generation API
     logger.info("Generating video with the following parameters:")
-    logger.info(f"Brand: {st.session_state.brand_name}")
-    logger.info(f"Trend: {st.session_state.selected_trend['title']}")
-    logger.info(f"Platform: {st.session_state.selected_platform}")
-    
+    logger.info("Brand: %s", st.session_state.brand_name)
+    logger.info("Trend: %s", st.session_state.selected_trend['title'])
+    logger.info("Platform: %s", st.session_state.selected_platform)
+    logger.info("Tone: %s", st.session_state.tone)
+
     # TODO call prompt maker here
-    
 
     # Simulate video generation delay
     progress_bar = st.progress(0)
@@ -338,12 +527,14 @@ def generate_video() -> bool:
     status_text.empty()
 
     # Store generated video in session state (mock data)
+    # TODO: here, one should make the API call to the video generation provider
     st.session_state.generated_video = {
-        "url": "https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_2mb.mp4",
+        "url": "/Users/mfr/Projects/Global-MIT-AI-Hackathon/data/In_a_fantastical_world_a_delicate"
+        "_ballerina_twirls_amidst_swirling_clouds_of_creamy_foam_as_a_rich_seed1072742588.mp4",
         "thumbnail": "https://placehold.co/800x450/333/FFF?text=Generated+Video+Thumbnail",
         "hashtags": [
             f"#{st.session_state.brand_name.replace(' ', '')}",
-            f"#{st.session_state.selected_trend['title'].replace(' ', '')}",
+            f"{st.session_state.selected_trend['title'].replace(' ', '')}",
             "#trending",
             "#viralmarketing",
         ],
@@ -426,6 +617,8 @@ def main():
     # Main content area
     if st.session_state.page == "trends":
         display_trends_page()
+    elif st.session_state.page == "song_selection":
+        display_song_selection_page()
     elif st.session_state.page == "generation":
         display_generation_page()
     elif st.session_state.page == "results":
@@ -471,7 +664,7 @@ def display_trends_page():
 def display_generation_page():
     """Display the video generation configuration page."""
     st.markdown("## Configure Your Brand Video")
-
+    # Show selected song information if available (for TikTok)
     # Show selected trend information
     if hasattr(st.session_state, "selected_trend"):
         trend = st.session_state.selected_trend
@@ -501,6 +694,19 @@ def display_generation_page():
                 st.markdown(f"**Hashtags:** {trend['hashtags']}")
             elif platform == "Instagram":
                 st.markdown(f"**Effect:** {trend['effect']}")
+        if platform == "TikTok" and hasattr(st.session_state, "selected_song"):
+            song = st.session_state.selected_song
+            st.markdown("---")
+            st.subheader("Selected Song")
+
+            song_col1, song_col2 = st.columns([1, 3])
+
+            with song_col1:
+                st.image(song["image_url"], width=100)
+
+            with song_col2:
+                st.markdown(f"**{song['title']}** by {song['artist']}")
+                st.audio(song["preview_url"])
 
     # Advanced configuration options
     st.markdown("### Advanced Configuration")
@@ -627,9 +833,7 @@ def initialize_session_state():
     """Initialize default values in session state."""
     defaults = {
         "brand_name": "",
-        "brand_slogan": "",
-        "brand_color": "#FF4B4B",
-        "brand_secondary_color": "#4B4BFF",
+        "brand_product": "",
         "video_length": 15,
         "tone": "Neutral",
         "video_format": "Short-form vertical",
@@ -651,6 +855,6 @@ if __name__ == "__main__":
 
         # Run the main application
         main()
-    except Exception as e:
+    except Exception as e:  # Again sorry but works
         st.error(f"An error occurred: {str(e)}")
-        logger.error(f"Application error: {str(e)}", exc_info=True)
+        logger.error("Application error: %s", str(e), exc_info=True)
