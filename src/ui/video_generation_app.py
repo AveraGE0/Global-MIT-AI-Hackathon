@@ -504,9 +504,38 @@ def generate_video() -> bool:
     logger.info("Platform: %s", st.session_state.selected_platform)
     logger.info("Tone: %s", st.session_state.tone)
 
+    i = 0
+    steps = [
+        "Calling agents for trend analysis...",
+        "Creating prompt for video...",
+        "Captioning video...",
+        "Analyzing related hashtags...",
+        "Analyzing brand assets...",
+        "Adapting trend format...",
+        "Generating video frames...",
+        "Adding brand elements...",
+        "Applying effects and transitions...",
+        "Adding audio...",
+        "Finalizing video...",
+    ]
+    # Simulate video generation delay
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+
+    ###### AGENT CALL ######
+    progress = (i+1) / len(steps)
+    progress_bar.progress(progress)
+    status_text.text(steps[i])
+
     trend_search = f"What is {st.session_state.selected_trend['title']}"
     payload = {"messages": [{"content": trend_search, "role": "user"}]}
     trend_explanation = agent_call(payload)
+
+    ###### Video prompt creation CALL ######
+    i += 1
+    progress = (i+1) / len(steps)
+    progress_bar.progress(progress)
+    status_text.text(steps[i])
 
     llm_text_to_video = setup_watsonx_llm_video()
     llm_caption_hashtags = setup_watsonx_llm()
@@ -519,8 +548,15 @@ def generate_video() -> bool:
         tone=st.session_state.tone,
         trend_description=trend_explanation
     )
-
+    # This would be used in the API call to the video provider
     final_video_prompt = llm_text_to_video.invoke(prompt_video)
+    logger.info("Calling video generative model with prompt: %s", final_video_prompt)
+
+    ###### Caption ######
+    i += 1
+    progress = (i+1) / len(steps)
+    progress_bar.progress(progress)
+    status_text.text(steps[i])
 
     prompt_caption_creation = create_caption()
 
@@ -530,6 +566,13 @@ def generate_video() -> bool:
         tone=st.session_state.tone)
 
     final_caption = llm_caption_hashtags.invoke(prompt_caption)
+    logger.info("Created caption: %s", final_caption)
+
+    ###### Recommended Hashtags ######
+    i += 1
+    progress = (i+1) / len(steps)
+    progress_bar.progress(progress)
+    status_text.text(steps[i])
 
     prompt_hashtag_creation = create_hashtags()
 
@@ -540,24 +583,12 @@ def generate_video() -> bool:
         tone=st.session_state.tone)
 
     final_hashtags = llm_caption_hashtags.invoke(prompt_hashtags)
+    
 
-    # Simulate video generation delay
-    progress_bar = st.progress(0)
-    status_text = st.empty()
 
-    steps = [
-        "Analyzing brand assets...",
-        "Adapting trend format...",
-        "Generating video frames...",
-        "Adding brand elements...",
-        "Applying effects and transitions...",
-        "Adding audio...",
-        "Finalizing video...",
-    ]
-
-    for i, step in enumerate(steps):
+    for j, step in enumerate(steps[i:], start=i):
         # Update progress bar and status
-        progress = (i + 1) / len(steps)
+        progress = (i + j + 1) / len(steps)
         progress_bar.progress(progress)
         status_text.text(step)
         time.sleep(0.5)
@@ -572,12 +603,13 @@ def generate_video() -> bool:
         "url": "/Users/mfr/Projects/Global-MIT-AI-Hackathon/data/In_a_fantastical_world_a_delicate"
         "_ballerina_twirls_amidst_swirling_clouds_of_creamy_foam_as_a_rich_seed1072742588.mp4",
         "thumbnail": "https://placehold.co/800x450/333/FFF?text=Generated+Video+Thumbnail",
-        "hashtags": [
-            f"#{st.session_state.brand_name.replace(' ', '')}",
-            f"{st.session_state.selected_trend['title'].replace(' ', '')}",
-            "#trending",
-            "#viralmarketing",
-        ],
+        "hashtags": final_hashtags.split(",").trail(),
+        # "hashtags": [
+        #     f"#{st.session_state.brand_name.replace(' ', '')}",
+        #     f"{st.session_state.selected_trend['title'].replace(' ', '')}",
+        #     "#trending",
+        #     "#viralmarketing",
+        # ],
     }
 
     return True
@@ -874,7 +906,7 @@ def initialize_session_state():
     defaults = {
         "brand_name": "",
         "brand_product": "",
-        "video_length": 15,
+        "video_length": 5,
         "tone": "Neutral",
         "video_format": "Short-form vertical",
         "include_captions": True,
