@@ -39,6 +39,12 @@ TikTok Music Integration
 - Python version: 3.12
 - Install dependencies with `pip install -r requirements.txt`
 - Run the app via Streamlit: `python -m streamlit run src/ui/video_generation_app.py`
+- add **keys** to .env file:
+    - *API_KEY*: IBM-could access
+    - *AGENT_URL* = agent cloud deployment space
+    - *IAM_URL* = auth key for agent
+    - *WML_URL* = hosting endpoint url
+    - *PROJECT_ID* = cloud project identifier 
 
 ## Workflow
 
