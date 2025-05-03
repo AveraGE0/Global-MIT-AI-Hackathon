@@ -548,8 +548,9 @@ def generate_video() -> bool:
         tone=st.session_state.tone,
         trend_description=trend_explanation
     )
-
+    # This would be used in the API call to the video provider
     final_video_prompt = llm_text_to_video.invoke(prompt_video)
+    logger.info("Calling video generative model with prompt: %s", final_video_prompt)
 
     ###### Caption ######
     i += 1
@@ -565,6 +566,7 @@ def generate_video() -> bool:
         tone=st.session_state.tone)
 
     final_caption = llm_caption_hashtags.invoke(prompt_caption)
+    logger.info("Created caption: %s", final_caption)
 
     ###### Recommended Hashtags ######
     i += 1
@@ -581,6 +583,7 @@ def generate_video() -> bool:
         tone=st.session_state.tone)
 
     final_hashtags = llm_caption_hashtags.invoke(prompt_hashtags)
+    
 
 
     for j, step in enumerate(steps[i:], start=i):
@@ -600,12 +603,13 @@ def generate_video() -> bool:
         "url": "/Users/mfr/Projects/Global-MIT-AI-Hackathon/data/In_a_fantastical_world_a_delicate"
         "_ballerina_twirls_amidst_swirling_clouds_of_creamy_foam_as_a_rich_seed1072742588.mp4",
         "thumbnail": "https://placehold.co/800x450/333/FFF?text=Generated+Video+Thumbnail",
-        "hashtags": [
-            f"#{st.session_state.brand_name.replace(' ', '')}",
-            f"{st.session_state.selected_trend['title'].replace(' ', '')}",
-            "#trending",
-            "#viralmarketing",
-        ],
+        "hashtags": final_hashtags.split(",").trail(),
+        # "hashtags": [
+        #     f"#{st.session_state.brand_name.replace(' ', '')}",
+        #     f"{st.session_state.selected_trend['title'].replace(' ', '')}",
+        #     "#trending",
+        #     "#viralmarketing",
+        # ],
     }
 
     return True
