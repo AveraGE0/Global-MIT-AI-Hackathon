@@ -8,6 +8,11 @@ from src.scraping.linkedin import get_linkedin_trending_hashtags
 from src.scraping.instagram import get_instagram_trending_hashtags
 from src.scraping.tiktok import get_tiktok_hashtag_trends, get_tiktok_song_trends
 from src.config import load_config
+from src.llm.agent import agent_call
+
+from src.llm.prompt_template import video_creating_prompt, create_hashtags, create_caption
+
+from src.llm.generator_llm import setup_watsonx_llm_video, setup_watsonx_llm
 
 
 logger = get_logger(__name__)
@@ -499,7 +504,42 @@ def generate_video() -> bool:
     logger.info("Platform: %s", st.session_state.selected_platform)
     logger.info("Tone: %s", st.session_state.tone)
 
-    # TODO call prompt maker here
+    trend_search = f"What is {st.session_state.selected_trend['title']}"
+    payload = {"messages": [{"content": trend_search, "role": "user"}]}
+    trend_explanation = agent_call(payload)
+
+    llm_text_to_video = setup_watsonx_llm_video()
+    llm_caption_hashtags = setup_watsonx_llm()
+
+    prompt_video_creation = video_creating_prompt()
+
+    prompt_video = prompt_video_creation.format(
+        brand_name=st.session_state.brand_name,
+        product=st.session_state.brand_product,
+        tone=st.session_state.tone,
+        trend_description=trend_explanation
+    )
+
+    final_video_prompt = llm_text_to_video.invoke(prompt_video)
+
+    prompt_caption_creation = create_caption()
+
+    prompt_caption = prompt_caption_creation.format(
+        brand_name=st.session_state.brand_name,
+        product=st.session_state.brand_product,
+        tone=st.session_state.tone)
+
+    final_caption = llm_caption_hashtags.invoke(prompt_caption)
+
+    prompt_hashtag_creation = create_hashtags()
+
+    prompt_hashtags = prompt_hashtag_creation.format(
+        brand_name=st.session_state.brand_name,
+        product=st.session_state.brand_product,
+        hashtags=st.session_state.selected_trend['title'],
+        tone=st.session_state.tone)
+
+    final_hashtags = llm_caption_hashtags.invoke(prompt_hashtag_creation)
 
     # Simulate video generation delay
     progress_bar = st.progress(0)
