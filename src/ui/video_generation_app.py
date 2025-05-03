@@ -504,9 +504,38 @@ def generate_video() -> bool:
     logger.info("Platform: %s", st.session_state.selected_platform)
     logger.info("Tone: %s", st.session_state.tone)
 
+    i = 0
+    steps = [
+        "Calling agents for trend analysis...",
+        "Creating prompt for video...",
+        "Captioning video...",
+        "Analyzing related hashtags...",
+        "Analyzing brand assets...",
+        "Adapting trend format...",
+        "Generating video frames...",
+        "Adding brand elements...",
+        "Applying effects and transitions...",
+        "Adding audio...",
+        "Finalizing video...",
+    ]
+    # Simulate video generation delay
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+
+    ###### AGENT CALL ######
+    progress = (i+1) / len(steps)
+    progress_bar.progress(progress)
+    status_text.text(steps[i])
+
     trend_search = f"What is {st.session_state.selected_trend['title']}"
     payload = {"messages": [{"content": trend_search, "role": "user"}]}
     trend_explanation = agent_call(payload)
+
+    ###### Video prompt creation CALL ######
+    i += 1
+    progress = (i+1) / len(steps)
+    progress_bar.progress(progress)
+    status_text.text(steps[i])
 
     llm_text_to_video = setup_watsonx_llm_video()
     llm_caption_hashtags = setup_watsonx_llm()
@@ -522,6 +551,12 @@ def generate_video() -> bool:
 
     final_video_prompt = llm_text_to_video.invoke(prompt_video)
 
+    ###### Caption ######
+    i += 1
+    progress = (i+1) / len(steps)
+    progress_bar.progress(progress)
+    status_text.text(steps[i])
+
     prompt_caption_creation = create_caption()
 
     prompt_caption = prompt_caption_creation.format(
@@ -530,6 +565,12 @@ def generate_video() -> bool:
         tone=st.session_state.tone)
 
     final_caption = llm_caption_hashtags.invoke(prompt_caption)
+
+    ###### Recommended Hashtags ######
+    i += 1
+    progress = (i+1) / len(steps)
+    progress_bar.progress(progress)
+    status_text.text(steps[i])
 
     prompt_hashtag_creation = create_hashtags()
 
@@ -541,23 +582,10 @@ def generate_video() -> bool:
 
     final_hashtags = llm_caption_hashtags.invoke(prompt_hashtags)
 
-    # Simulate video generation delay
-    progress_bar = st.progress(0)
-    status_text = st.empty()
 
-    steps = [
-        "Analyzing brand assets...",
-        "Adapting trend format...",
-        "Generating video frames...",
-        "Adding brand elements...",
-        "Applying effects and transitions...",
-        "Adding audio...",
-        "Finalizing video...",
-    ]
-
-    for i, step in enumerate(steps):
+    for j, step in enumerate(steps[i:], start=i):
         # Update progress bar and status
-        progress = (i + 1) / len(steps)
+        progress = (i + j + 1) / len(steps)
         progress_bar.progress(progress)
         status_text.text(step)
         time.sleep(0.5)
