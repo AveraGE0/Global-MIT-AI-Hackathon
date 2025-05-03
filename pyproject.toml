@@ -1,0 +1,19 @@
+[project]
+name = "global-mit-ai-hackathon"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "accelerate>=1.6.0",
+    "diffusers>=0.33.1",
+    "ftfy>=6.3.1",
+    "imageio>=2.37.0",
+    "imageio-ffmpeg>=0.6.0",
+    "ipykernel>=6.29.5",
+    "opencv-python>=4.11.0.86",
+    "sentencepiece>=0.2.0",
+    "torch>=2.7.0",
+    "torchvision>=0.22.0",
+    "transformers>=4.51.3",
+]
