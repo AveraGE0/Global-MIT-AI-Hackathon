@@ -1,6 +1,7 @@
 from langchain_ibm import WatsonxLLM
 from dotenv import load_dotenv
 import os
+from src.llm.prompt_template import prediction_forecast
 
 load_dotenv()
 
@@ -44,3 +45,6 @@ def setup_watsonx_llm():
         params=parameters,
     )
     return watsonx_llm
+
+
+
