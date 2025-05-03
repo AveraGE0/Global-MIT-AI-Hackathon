@@ -3,12 +3,18 @@ import json
 import logging
 import time
 from typing import Dict, List, Optional, Tuple, Union
+from langchain.prompts import PromptTemplate
 
 import pandas as pd
 import requests
 import streamlit as st
 from PIL import Image
 from src.logging import get_logger
+from src.llm.agent import agent_call
+
+from src.llm.prompt_template import video_creating_prompt, create_hashtags,predict_viral, create_caption
+
+from src.llm.generator_llm import setup_watsonx_llm_video, setup_watsonx_llm
 
 
 logger = get_logger(__name__)
@@ -310,7 +316,43 @@ def generate_video() -> bool:
     logger.info(f"Platform: {st.session_state.selected_platform}")
     
     # TODO call prompt maker here
-    
+
+    trend_search = f"What is {st.session_state.selected_trend['title']}"
+    payload = {"messages": [{"content": trend_search, "role": "user"}]}
+    trend_explanation = agent_call(payload)
+
+    llm_text_to_video = setup_watsonx_llm_video()
+    llm_caption_hashtags = setup_watsonx_llm()
+
+    prompt_video_creation = video_creating_prompt()
+
+    prompt_video = prompt_video_creation.format(
+        brand_name=st.session_state.brand_name,
+        product=st.session_state.brand_product,
+        tone=st.session_state.tone,
+        trend_description=trend_explanation
+    )
+
+    final_video_prompt = llm_text_to_video.invoke(prompt_video)
+
+    prompt_caption_creation = create_caption()
+
+    prompt_caption = prompt_caption_creation.format(
+        brand_name=st.session_state.brand_name,
+        product=st.session_state.brand_product,
+        tone=st.session_state.tone)
+
+    final_caption = llm_caption_hashtags.invoke(prompt_caption)
+
+    prompt_hashtag_creation = create_hashtags()
+
+    prompt_hashtags = prompt_hashtag_creation.format(
+        brand_name=st.session_state.brand_name,
+        product=st.session_state.brand_product,
+        hashtags=st.session_state.selected_trend['title'],
+        tone=st.session_state.tone)
+
+    final_hashtags = llm_caption_hashtags.invoke(prompt_hashtag_creation)
 
     # Simulate video generation delay
     progress_bar = st.progress(0)
