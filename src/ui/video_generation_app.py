@@ -539,7 +539,7 @@ def generate_video() -> bool:
         hashtags=st.session_state.selected_trend['title'],
         tone=st.session_state.tone)
 
-    final_hashtags = llm_caption_hashtags.invoke(prompt_hashtag_creation)
+    final_hashtags = llm_caption_hashtags.invoke(prompt_hashtags)
 
     # Simulate video generation delay
     progress_bar = st.progress(0)
