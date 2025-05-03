@@ -902,7 +902,7 @@ def initialize_session_state():
     defaults = {
         "brand_name": "",
         "brand_product": "",
-        "video_length": 15,
+        "video_length": 5,
         "tone": "Neutral",
         "video_format": "Short-form vertical",
         "include_captions": True,
