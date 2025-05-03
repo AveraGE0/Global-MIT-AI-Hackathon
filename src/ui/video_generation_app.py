@@ -610,7 +610,7 @@ def generate_video() -> bool:
     # Store generated video in session state (mock data)
     # TODO: here, one should make the API call to the video generation provider
     st.session_state.generated_video = {
-        "url": "/Users/mfr/Projects/Global-MIT-AI-Hackathon/data/In_a_fantastical_world_a_delicate"
+        "url": "data/In_a_fantastical_world_a_delicate"
         "_ballerina_twirls_amidst_swirling_clouds_of_creamy_foam_as_a_rich_seed1072742588.mp4",
         "thumbnail": "https://placehold.co/800x450/333/FFF?text=Generated+Video+Thumbnail",
         "hashtags": final_hashtags.split(","),
