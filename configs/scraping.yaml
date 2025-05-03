@@ -1,0 +1,7 @@
+tiktok:
+  hashtags: https://ads.tiktok.com/business/creativecenter/inspiration/popular/hashtag/pc/en
+  songs: https://ads.tiktok.com/business/creativecenter/inspiration/popular/music/pc/en
+linkedin:
+  hashtags: data/linkedin_mock_data.json
+instagram:
+  hashtags: data/instagram_mock_data.json
