@@ -39,6 +39,3 @@ def agent_call(payload):
     explanation = re.sub(r'(?s)^.*\]\s*', '', full_text)
 
     return explanation
-
-response = agent_call(payload_scoring)
-print(response)
