@@ -593,6 +593,7 @@ def generate_video() -> bool:
         tone=st.session_state.tone)
 
     final_hashtags = llm_caption_hashtags.invoke(prompt_hashtags)
+    logger.info("Generated hashtags: %s",final_hashtags)
     
 
 
@@ -614,6 +615,7 @@ def generate_video() -> bool:
         "_ballerina_twirls_amidst_swirling_clouds_of_creamy_foam_as_a_rich_seed1072742588.mp4",
         "thumbnail": "https://placehold.co/800x450/333/FFF?text=Generated+Video+Thumbnail",
         "hashtags": final_hashtags.split(","),
+        "generated_caption": final_caption,
         # "hashtags": [
         #     f"#{st.session_state.brand_name.replace(' ', '')}",
         #     f"{st.session_state.selected_trend['title'].replace(' ', '')}",
@@ -637,6 +639,27 @@ def display_generated_video() -> None:
     # Video player
     st.video(video_data["url"])
 
+    # Display the caption in a highlighted box
+    #if hasattr(st.session_state, "generated_caption"):
+    st.markdown("### 📝 Caption")
+    st.markdown(
+        f"""
+            <div style="
+                background-color: #f0f2f6; 
+                border-radius: 10px; 
+                padding: 15px; 
+                margin-bottom: 20px;
+                border-left: 5px solid #4CAF50;
+            ">
+                {video_data["generated_caption"]}
+            </div>
+            """,
+        unsafe_allow_html=True
+    )
+
+    # Add a copy button for the caption
+    if st.button("Copy Caption", key="copy_caption_btn"):
+        st.toast("Caption copied to clipboard!")
     # Results in columns
     col1, col2 = st.columns(2)
 
@@ -890,6 +913,8 @@ def display_results_page():
                 del st.session_state.selected_platform
             if hasattr(st.session_state, "generated_video"):
                 del st.session_state.generated_video
+            if hasattr(st.session_state, "generated_caption"):
+                del st.session_state.generated_caption
 
             st.session_state.page = "trends"
             st.rerun()
@@ -906,6 +931,8 @@ def display_results_page():
                 del st.session_state.selected_platform
             if hasattr(st.session_state, "generated_video"):
                 del st.session_state.generated_video
+            if hasattr(st.session_state, "generated_caption"):
+                del st.session_state.generated_caption
 
             st.session_state.page = "trends"
             st.rerun()

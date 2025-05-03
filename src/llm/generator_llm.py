@@ -1,5 +1,4 @@
 from langchain_ibm import WatsonxLLM
-from src.llm.prompt_template import video_creating_prompt, create_caption, create_hashtags
 from dotenv import load_dotenv
 import os
 
@@ -45,26 +44,3 @@ def setup_watsonx_llm():
         params=parameters,
     )
     return watsonx_llm
-
-
-llm = setup_watsonx_llm_video()
-
-brand_name = "Starbucks"
-product = "Beverages"
-target = "Gen Z"
-tone = "funny"
-
-trend_description= "Italian Brainrot is a series of surrealist Internet memes that emerged in early 2025, characterized by absurd photos of AI-generated creatures with Italian names. The memes often feature characters with absurd and ironic names, such as Tung Tung Tung Tung Tung Tung Tung Saer, Capuccino Asashino, and Boneca Amvalabu. The memes have gained popularity on social media platforms such as TikTok and Reddit, with many users creating and sharing their own Italian Brainrot characters. The phenomenon has also inspired a theater play, a coloring book, and a musical."
-
-
-prompt_hashtag_creation = create_caption()
-
-prompt_hashtags = prompt_hashtag_creation.format(
-        brand_name=brand_name,
-        product=product,
-        tone=tone)
-
-
-r = llm.invoke(prompt_hashtags)
-
-print(r)
