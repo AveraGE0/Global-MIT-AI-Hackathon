@@ -95,7 +95,17 @@ def fetch_trending_content(platform: str) -> List[Dict]:
     trends = {
         "TikTok": [
             {
-                "id": f"li{i+1}",
+                "id": "li1",
+                "title": "# Italian Brainrot",
+                "description": "Professionals sharing career development matrices",
+                "engagement": "4M follower",
+                "image_url": "https://placehold.co/600x400/0077B5/FFF?text=Italian Brainrot",
+                "audio": "Italian Brainrot",
+            }  # Italian brain-rot is always trending
+        ] + 
+        [
+            {
+                "id": f"li{i+2}",
                 "title": f"#{post["hashtag"]}",
                 "description": "Professionals sharing career development matrices",
                 "engagement": f"{post['post_count']} follower",
@@ -103,7 +113,7 @@ def fetch_trending_content(platform: str) -> List[Dict]:
                 "audio": f"{post["hashtag"]}",
             }
             for i, post in enumerate(
-                get_tiktok_hashtag_trends(config["tiktok"]["hashtags"], limit=6)
+                get_tiktok_hashtag_trends(config["tiktok"]["hashtags"], limit=5)
             )
         ],
         "LinkedIn": [
@@ -588,7 +598,7 @@ def generate_video() -> bool:
 
     for j, step in enumerate(steps[i:], start=i):
         # Update progress bar and status
-        progress = (i + j + 1) / len(steps)
+        progress = (j + 1) / len(steps)
         progress_bar.progress(progress)
         status_text.text(step)
         time.sleep(0.5)
@@ -603,7 +613,7 @@ def generate_video() -> bool:
         "url": "/Users/mfr/Projects/Global-MIT-AI-Hackathon/data/In_a_fantastical_world_a_delicate"
         "_ballerina_twirls_amidst_swirling_clouds_of_creamy_foam_as_a_rich_seed1072742588.mp4",
         "thumbnail": "https://placehold.co/800x450/333/FFF?text=Generated+Video+Thumbnail",
-        "hashtags": final_hashtags.split(",").trail(),
+        "hashtags": final_hashtags.split(","),
         # "hashtags": [
         #     f"#{st.session_state.brand_name.replace(' ', '')}",
         #     f"{st.session_state.selected_trend['title'].replace(' ', '')}",
